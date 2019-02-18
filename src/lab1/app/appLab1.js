@@ -65,11 +65,11 @@ export default class AppLab1 extends Component {
                 text: "Dependence of time on the number of discrete samples"
             },
             axisY: {
-                title: "Y",
+                title: "Y: time",
                 includeZero: false
             },
             axisX: {
-                title: "X",
+                title: "X: discrete samples",
                 includeZero: false
             },
             toolTip: {
@@ -119,12 +119,13 @@ export default class AppLab1 extends Component {
         const frequency = values.frequency;
         const division = frequency / harmonicsNum + frequency % harmonicsNum;
         const discreteSamples = values.discreteNum;
+        const accuracy = +0.5; // work only for +1 and +0.5 (I don't know why), otherwise charts are crash
 
         let signalChart = [];
         let harmonicCharts = [];
 
         const start = window.performance.now();
-        this.generateHarmonics(harmonicsNum, harmonicCharts, division, discreteSamples);
+        this.generateHarmonics(harmonicsNum, harmonicCharts, division, discreteSamples, accuracy);
         this.generateSignal(harmonicCharts, signalChart);
         const end = window.performance.now();
 
@@ -148,19 +149,21 @@ export default class AppLab1 extends Component {
                 type: "line",
                 name: `Harmonics number: ${harmonicsNum};  Frequency ${frequency};  Discrete samples number ${discreteSamples};`,
                 showInLegend: true,
-                dataPoints: this.arrToObjects(signalChart)
+                dataPoints: this.arrToObjects(signalChart, accuracy)
             };
 
-            console.log(harmonicCharts);
+            //console.log(harmonicCharts);
 
             for (let i = 0; i < harmonicsNum; i++) {
                 newOptionsHarmonic.data[i] = {
                     type: "spline",
                     name: `${i + 1}`,
                     showInLegend: true,
-                    dataPoints: this.arrToObjects(harmonicCharts[i])
+                    dataPoints: this.arrToObjects(harmonicCharts[i], accuracy)
                 }
             }
+
+         //   console.log(newOptionsHarmonic.data);
 
             newOptionsHarmonic.data.splice(harmonicsNum, newOptionsHarmonic.data.length);
 
@@ -170,7 +173,9 @@ export default class AppLab1 extends Component {
                 time: (end - start)
             };
 
-            /*newOptionsTime.data[0] = {
+
+            /*//Uncomment this code if you want to rebuild the timeChart!!
+                newOptionsTime.data[0] = {
                 type: "spline",
                 name: "Number of discrete samples is 2^X",
                 showInLegend: true,
@@ -187,20 +192,20 @@ export default class AppLab1 extends Component {
         })
     };
 
-    generateSingleHarmonic = (division, discreteSamples) => {
+    generateSingleHarmonic = (division, discreteSamples, accuracy) => {
         const chart = [];
         const amplitude = Math.random();
         const phase = Math.random() * Math.PI * 2;
 
-        for (let i = 0; i <= discreteSamples; i++) {
-            chart[i] = amplitude * Math.sin(division * i + phase);
+        for (let i = 0; i <= discreteSamples; i = i + accuracy) {
+            chart[i*(1/accuracy)] = amplitude * Math.sin(division * i + phase);
         }
         return chart;
     };
 
-    generateHarmonics = (harmonicsNum, harmonicCharts, division, discreteSamples) => {
+    generateHarmonics = (harmonicsNum, harmonicCharts, division, discreteSamples, accuracy) => {
         for (let i = 0; i < harmonicsNum; i++) {
-            harmonicCharts[i] = this.generateSingleHarmonic(division * (i + 1), discreteSamples)
+            harmonicCharts[i] = this.generateSingleHarmonic(division * (i + 1), discreteSamples, accuracy)
         }
     };
 
@@ -215,10 +220,10 @@ export default class AppLab1 extends Component {
     };
 
 
-    arrToObjects = (arr) => {
+    arrToObjects = (arr, accuracy) => {
         let newArr = [];
         for (let i = 0; i <= arr.length; i++) {
-            newArr[i] = {y: arr[i], x: i}
+            newArr[i] = {y: arr[i],label: i/(1/accuracy)}
         }
         return newArr
 
@@ -274,7 +279,7 @@ export default class AppLab1 extends Component {
         return timeChart;
     };
 
-
+//<CanvasJSChart options={this.state.optionsHarmonic}/>
     render() {
         return (
             <div className={'main'}>
