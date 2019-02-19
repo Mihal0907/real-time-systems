@@ -3,6 +3,7 @@ import './appLab1.css';
 import Form from '../form'
 import Result from '../result'
 import CanvasJSReact from '../../canvasjs/canvasjs.react'
+import SignalService from '../signalServise'
 
 const CanvasJSChart = CanvasJSReact.CanvasJSChart
 
@@ -117,53 +118,35 @@ export default class AppLab1 extends Component {
 
         const harmonicsNum = values.harmonicsNum;
         const frequency = values.frequency;
-        const division = frequency / harmonicsNum + frequency % harmonicsNum;
+        const division = frequency / harmonicsNum;
         const discreteSamples = values.discreteNum;
         const accuracy = +0.5; // work only for +1 and +0.5 (I don't know why), otherwise charts are crash
 
-        let signalChart = [];
-        let harmonicCharts = [];
+        let signalService = new SignalService();
 
         const start = window.performance.now();
-        this.generateHarmonics(harmonicsNum, harmonicCharts, division, discreteSamples, accuracy);
-        this.generateSignal(harmonicCharts, signalChart);
+        let harmonicCharts = signalService.generateHarmonics(harmonicsNum, division, discreteSamples, accuracy);
+        let signalChart = signalService.generateSignal(harmonicCharts);
         const end = window.performance.now();
 
         //console.log(harmonicCharts);
         //console.log(signalChart);
 
-        const expectation = this.mathExpectation(signalChart);
-        const dispersion = this.mathDispersion(signalChart, expectation);
+        const expectation = signalService.mathExpectation(signalChart);
+        const dispersion = signalService.mathDispersion(signalChart, expectation);
 
         /*//Uncomment this code if you want to rebuild the timeChart!!
         let timeChart = this.buildTimeChart(harmonicsNum, division, 24);*/
 
-
         this.setState(({optionsHarmonic, optionsFull, optionsTime}) => {
 
-            let newOptionsHarmonic = JSON.parse(JSON.stringify(optionsHarmonic));
-            let newOptionsFull = JSON.parse(JSON.stringify(optionsFull));
+            let newOptionsHarmonic = signalService.harmonicsOptions(harmonicCharts);
+            let newOptionsFull = signalService.siganalOptions(signalChart);
             let newOptionsTime = JSON.parse(JSON.stringify(optionsTime));
-
-            newOptionsFull.data[0] = {
-                type: "line",
-                name: `Harmonics number: ${harmonicsNum};  Frequency ${frequency};  Discrete samples number ${discreteSamples};`,
-                showInLegend: true,
-                dataPoints: this.arrToObjects(signalChart, accuracy)
-            };
 
             //console.log(harmonicCharts);
 
-            for (let i = 0; i < harmonicsNum; i++) {
-                newOptionsHarmonic.data[i] = {
-                    type: "spline",
-                    name: `${i + 1}`,
-                    showInLegend: true,
-                    dataPoints: this.arrToObjects(harmonicCharts[i], accuracy)
-                }
-            }
-
-         //   console.log(newOptionsHarmonic.data);
+            //console.log(newOptionsHarmonic.data);
 
             newOptionsHarmonic.data.splice(harmonicsNum, newOptionsHarmonic.data.length);
 
@@ -173,7 +156,6 @@ export default class AppLab1 extends Component {
                 time: (end - start)
             };
 
-
             /*//Uncomment this code if you want to rebuild the timeChart!!
                 newOptionsTime.data[0] = {
                 type: "spline",
@@ -181,7 +163,6 @@ export default class AppLab1 extends Component {
                 showInLegend: true,
                 dataPoints: timeChart
             };*/
-
 
             return {
                 optionsHarmonic: newOptionsHarmonic,
@@ -192,92 +173,6 @@ export default class AppLab1 extends Component {
         })
     };
 
-    generateSingleHarmonic = (division, discreteSamples, accuracy) => {
-        const chart = [];
-        const amplitude = Math.random();
-        const phase = Math.random() * Math.PI * 2;
-
-        for (let i = 0; i <= discreteSamples; i = i + accuracy) {
-            chart[i*(1/accuracy)] = amplitude * Math.sin(division * i + phase);
-        }
-        return chart;
-    };
-
-    generateHarmonics = (harmonicsNum, harmonicCharts, division, discreteSamples, accuracy) => {
-        for (let i = 0; i < harmonicsNum; i++) {
-            harmonicCharts[i] = this.generateSingleHarmonic(division * (i + 1), discreteSamples, accuracy)
-        }
-    };
-
-    generateSignal = (harmonicCharts, signalChart) => {
-        for (let i = 0; i < harmonicCharts[1].length; i++) {
-            let sum = 0;
-            for (let j = 0; j < harmonicCharts.length; j++) {
-                sum += harmonicCharts[j][i];
-            }
-            signalChart[i] = sum;
-        }
-    };
-
-
-    arrToObjects = (arr, accuracy) => {
-        let newArr = [];
-        for (let i = 0; i <= arr.length; i++) {
-            newArr[i] = {y: arr[i],label: i/(1/accuracy)}
-        }
-        return newArr
-
-    };
-
-
-    mathExpectation = (arr) => {
-        let sum = 0;
-        for (let i = 0; i < arr.length; i++) {
-            sum += arr[i];
-        }
-        return (sum / arr.length);
-    };
-
-    mathDispersion = (arr, exp) => {
-        let sum = 0;
-        let num = 0;
-        for (let i = 0; i < arr.length; i++) {
-            num = (exp - arr[i]);
-            sum += Math.pow(num, 2);
-        }
-
-        return sum / (arr.length - 1);
-    };
-
-    generateSignalTrue = (harmonicsNum, division, discreteSamples) => {
-        let chart = [];
-        for (let i = 0; i < discreteSamples; i++) {
-            let sum = 0;
-            let amplitude = Math.random();
-            let phase = Math.random() * 2 * Math.PI;
-            for (let j = 0; j < harmonicsNum; j++) {
-                sum += amplitude * Math.sin(division * (j + 1) + phase);
-            }
-            chart[i] = sum;
-        }
-    };
-
-    buildTimeChart = (harmonicsNum, division, power) => {
-        let theoreticStart = 0;
-        let theoreticEnd = 0;
-        let timeChart = [];
-        let sample = 2;
-
-        for (let i = 0; i <= power; i++) {
-            theoreticStart = window.performance.now();
-            this.generateSignalTrue(harmonicsNum, division, sample);
-            theoreticEnd = window.performance.now();
-            timeChart[i] = {x: i, y: (theoreticEnd - theoreticStart)};
-            sample = sample * 2;
-        }
-        console.log(timeChart);
-        return timeChart;
-    };
 
 //<CanvasJSChart options={this.state.optionsHarmonic}/>
     render() {
