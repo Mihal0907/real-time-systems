@@ -1,2 +1,2 @@
-import SignalSrvice from './signalService'
-export default SignalSrvice;
+import SignalService from './signalService'
+export default SignalService;

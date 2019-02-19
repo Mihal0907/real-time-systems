@@ -121,48 +121,37 @@ export default class AppLab1 extends Component {
         const division = frequency / harmonicsNum;
         const discreteSamples = values.discreteNum;
         const accuracy = +0.5; // work only for +1 and +0.5 (I don't know why), otherwise charts are crash
+        const power = 22;
 
-        let signalService = new SignalService();
+        let signalService = new SignalService(
+            harmonicsNum,
+            division,
+            discreteSamples,
+            accuracy,
+            power);
 
         const start = window.performance.now();
-        let harmonicCharts = signalService.generateHarmonics(harmonicsNum, division, discreteSamples, accuracy);
+        let harmonicCharts = signalService.generateHarmonics();
         let signalChart = signalService.generateSignal(harmonicCharts);
         const end = window.performance.now();
-
-        //console.log(harmonicCharts);
-        //console.log(signalChart);
 
         const expectation = signalService.mathExpectation(signalChart);
         const dispersion = signalService.mathDispersion(signalChart, expectation);
 
-        /*//Uncomment this code if you want to rebuild the timeChart!!
-        let timeChart = this.buildTimeChart(harmonicsNum, division, 24);*/
-
-        this.setState(({optionsHarmonic, optionsFull, optionsTime}) => {
+        this.setState(({optionsTime}) => {
 
             let newOptionsHarmonic = signalService.harmonicsOptions(harmonicCharts);
-            let newOptionsFull = signalService.siganalOptions(signalChart);
+            let newOptionsFull = signalService.signalOptions(signalChart);
             let newOptionsTime = JSON.parse(JSON.stringify(optionsTime));
-
-            //console.log(harmonicCharts);
-
-            //console.log(newOptionsHarmonic.data);
-
-            newOptionsHarmonic.data.splice(harmonicsNum, newOptionsHarmonic.data.length);
-
+            /*//Uncomment this part of code if you want to rebuild chart
+            newOptionsTime = signalService.timeOptions(signalService.buildTimeChart());*/
             let newResults = {
                 expectation: expectation,
                 dispersion: dispersion,
                 time: (end - start)
             };
 
-            /*//Uncomment this code if you want to rebuild the timeChart!!
-                newOptionsTime.data[0] = {
-                type: "spline",
-                name: "Number of discrete samples is 2^X",
-                showInLegend: true,
-                dataPoints: timeChart
-            };*/
+            newOptionsHarmonic.data.splice(harmonicsNum, newOptionsHarmonic.data.length);
 
             return {
                 optionsHarmonic: newOptionsHarmonic,
@@ -173,8 +162,6 @@ export default class AppLab1 extends Component {
         })
     };
 
-
-//<CanvasJSChart options={this.state.optionsHarmonic}/>
     render() {
         return (
             <div className={'main'}>
