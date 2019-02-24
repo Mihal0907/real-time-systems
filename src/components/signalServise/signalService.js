@@ -18,7 +18,7 @@ export default class SignalService {
         const amplitude = Math.random();
         const phase = Math.random() * Math.PI * 2;
 
-        for (let i = 0; i <= this.discreteSamples; i = i + this.accuracy) {
+        for (let i = 0; i <= this.discreteSamples*2; i = i + this.accuracy) {
             chart[i * (1 / this.accuracy)] = amplitude * Math.sin(division * i + phase);
         }
         // console.log(division);
@@ -45,20 +45,46 @@ export default class SignalService {
         return signalChart;
     };
 
-    arrToObjects = (arr) => {
+    arrToObjects = (arr, division) => {
         let newArr = [];
-        for (let i = 0; i <= arr.length; i++) {
+        for (let i = 0; i <= arr.length/division; i++) {
             newArr[i] = {y: arr[i], label: i / (1 / this.accuracy)}
         }
         return newArr
 
     };
 
-    signalOptions = (signalChart) => {
+    autoCorrelation = (arr, exp) => {
+        let newArr = [];
+        let sum;
+        for (let i = 0; i <= this.discreteSamples; i++){
+            sum = 0;
+            for (let j = 0; j<= this.discreteSamples; j++){
+                sum = sum + (arr[j] - exp)*(arr[i+j] - exp);
+            }
+            newArr[i] = sum/(this.discreteSamples-1);
+        }
+        return newArr;
+    };
+
+    mutualCorrelation = (arrX, arrY, expX, expY) => {
+        let newArr = [];
+        let sum;
+        for (let i = 0; i <= this.discreteSamples; i++){
+            sum = 0;
+            for (let j = 0; j<= this.discreteSamples; j++){
+                sum = sum + (arrX[j] - expX)*(arrY[i+j] - expY);
+            }
+            newArr[i] = sum/(this.discreteSamples-1);
+        }
+        return newArr;
+    };
+
+    signalOptions = (signalChart, text) => {
         return {
             animationEnabled: false,
             title: {
-                text: "Generated signal timeChart"
+                text: text
             },
             axisY: {
                 title: "Y",
@@ -74,18 +100,47 @@ export default class SignalService {
             data: [{
                 type: "line",
                 name: "",
+                color: "red",
                 showInLegend: true,
-                dataPoints: this.arrToObjects(signalChart)
+                dataPoints: this.arrToObjects(signalChart, 2)
             }]
         }
     };
 
-    harmonicsOptions = (harmonicCharts) => {
+
+    correlationOptions = (chart, text) => {
+        return {
+            animationEnabled: false,
+            title: {
+                text: text
+            },
+            axisY: {
+                title: "Y",
+                includeZero: false
+            },
+            axisX: {
+                title: "X",
+                includeZero: false
+            },
+            toolTip: {
+                shared: true
+            },
+            data: [{
+                type: "spline",
+                name: "",
+                color: "green",
+                showInLegend: true,
+                dataPoints: this.arrToObjects(chart, 1)
+            }]
+        }
+    };
+
+    harmonicsOptions = (harmonicCharts, text) => {
         let harmonicOptions = {
 
             animationEnabled: false,
             title: {
-                text: "Harmonics timeChart"
+                text: text
             },
             axisY: {
                 title: "Y",
@@ -106,7 +161,7 @@ export default class SignalService {
                 type: "spline",
                 name: `${i + 1}`,
                 showInLegend: true,
-                dataPoints: this.arrToObjects(harmonicCharts[i], 0.5)
+                dataPoints: this.arrToObjects(harmonicCharts[i], 2)
             }
         }
 
@@ -134,7 +189,7 @@ export default class SignalService {
                 type: "spline",
                 name: "Number of discrete samples is 2^X",
                 showInLegend: true,
-                dataPoints: this.arrToObjects(timeChart)
+                dataPoints: this.arrToObjects(timeChart, 1)
             }]
         }
     };

@@ -35,6 +35,7 @@ export default class Form extends Component {
     render() {
         return (
             <div className={'form-group row d-flex'}>
+                <h4>Input values</h4>
                 <form className={'form'}>
                     <input type={'text'}
                            className={'form-control input'}
