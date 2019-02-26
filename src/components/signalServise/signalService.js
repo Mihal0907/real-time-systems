@@ -18,7 +18,7 @@ export default class SignalService {
         const amplitude = Math.random();
         const phase = Math.random() * Math.PI * 2;
 
-        for (let i = 0; i <= this.discreteSamples*2; i = i + this.accuracy) {
+        for (let i = 0; i <= this.discreteSamples * 2; i = i + this.accuracy) {
             chart[i * (1 / this.accuracy)] = amplitude * Math.sin(division * i + phase);
         }
         // console.log(division);
@@ -47,7 +47,7 @@ export default class SignalService {
 
     arrToObjects = (arr, division) => {
         let newArr = [];
-        for (let i = 0; i <= arr.length/division; i++) {
+        for (let i = 0; i <= arr.length / division; i++) {
             newArr[i] = {y: arr[i], label: i / (1 / this.accuracy)}
         }
         return newArr
@@ -57,12 +57,12 @@ export default class SignalService {
     autoCorrelation = (arr, exp) => {
         let newArr = [];
         let sum;
-        for (let i = 0; i <= this.discreteSamples; i++){
+        for (let i = 0; i <= this.discreteSamples; i++) {
             sum = 0;
-            for (let j = 0; j<= this.discreteSamples; j++){
-                sum = sum + (arr[j] - exp)*(arr[i+j] - exp);
+            for (let j = 0; j <= this.discreteSamples; j++) {
+                sum = sum + (arr[j] - exp) * (arr[i + j] - exp);
             }
-            newArr[i] = sum/(this.discreteSamples-1);
+            newArr[i] = sum / (this.discreteSamples - 1);
         }
         return newArr;
     };
@@ -70,14 +70,24 @@ export default class SignalService {
     mutualCorrelation = (arrX, arrY, expX, expY) => {
         let newArr = [];
         let sum;
-        for (let i = 0; i <= this.discreteSamples; i++){
+        for (let i = 0; i <= this.discreteSamples; i++) {
             sum = 0;
-            for (let j = 0; j<= this.discreteSamples; j++){
-                sum = sum + (arrX[j] - expX)*(arrY[i+j] - expY);
+            for (let j = 0; j <= this.discreteSamples; j++) {
+                sum = sum + (arrX[j] - expX) * (arrY[i + j] - expY);
             }
-            newArr[i] = sum/(this.discreteSamples-1);
+            newArr[i] = sum / (this.discreteSamples - 1);
         }
         return newArr;
+    };
+
+    checkCorrelation = (arrX, arrY) => {
+        for (let i = 0; i <= this.discreteSamples; i++) {
+            if ((arrX[i] > 0 && arrY[i] > 0) || (arrX[i] < 0 && arrY[i] < 0)) {
+                console.log(`x: ${arrX[i].toFixed(3)}, y: ${arrY[i].toFixed(3)} - correlation > 0`);
+            } else {
+                console.log(`x: ${arrX[i].toFixed(3)}, y: ${arrY[i].toFixed(3)} - correlation < 0`);
+            }
+        }
     };
 
     signalOptions = (signalChart, text) => {

@@ -287,6 +287,8 @@ export default class App extends Component {
 
         let correlationY = signalService.autoCorrelation(signalChartY, expectationY);
 
+        signalService.checkCorrelation(signalChartX, signalChartY);
+
         //-------------------------------------------------------------------------
 
         this.setState(({optionsTime}) => {
