@@ -185,6 +185,31 @@ export default class App extends Component {
                 ]
             }]
         },
+        optionsFourierX: {
+            animationEnabled: false,
+            title: {
+                text: " "
+            },
+            axisY: {
+                title: "Y",
+                includeZero: false
+            },
+            axisX: {
+                title: "X",
+                includeZero: false
+            },
+            toolTip: {
+                shared: true
+            },
+            data: [{
+                type: "line",
+                name: "",
+                showInLegend: true,
+                dataPoints: [
+                    {y: 0, x: 0},
+                ]
+            }]
+        },
         optionsTime: {
             animationEnabled: false,
             title: {
@@ -238,13 +263,15 @@ export default class App extends Component {
             name: "X signal",
             expectation: 0,
             dispersion: 0,
-            time: 0
+            timeX: 0,
+            timeFx: 0
         },
         resultsY: {
             name: "Y signal",
             expectation: 0,
             dispersion: 0,
-            time: 0
+            timeY: 0,
+            timeFy: 0
         }
 
     };
@@ -275,19 +302,29 @@ export default class App extends Component {
 
         let correlationX = signalService.autoCorrelation(signalChartX, expectationX);
 
+        let startFx = window.performance.now();
+        let fourierTransformX = signalService.fourierTransform(signalChartX);
+        let endFx = window.performance.now();
+
+        console.log(fourierTransformX)
+
         //-------------------------------------------------------------------------
 
-        const startY = window.performance.now();
-        let harmonicChartsY = signalService.generateHarmonics();
-        let signalChartY = signalService.generateSignal(harmonicChartsY);
-        const endY = window.performance.now();
+        /*  const startY = window.performance.now();
+          let harmonicChartsY = signalService.generateHarmonics();
+          let signalChartY = signalService.generateSignal(harmonicChartsY);
+          const endY = window.performance.now();
 
-        const expectationY = signalService.mathExpectation(signalChartY);
-        const dispersionY = signalService.mathDispersion(signalChartY, expectationY);
+          const expectationY = signalService.mathExpectation(signalChartY);
+          const dispersionY = signalService.mathDispersion(signalChartY, expectationY);
 
-        let correlationY = signalService.autoCorrelation(signalChartY, expectationY);
+          let correlationY = signalService.autoCorrelation(signalChartY, expectationY);
 
-        signalService.checkCorrelation(signalChartX, signalChartY);
+          let startFy = window.performance.now();
+          let fourierTransformY = signalService.fourierTransform(signalChartY);
+          let endFy = window.performance.now();
+
+          signalService.checkCorrelation(signalChartX, signalChartY);*/
 
         //-------------------------------------------------------------------------
 
@@ -299,60 +336,76 @@ export default class App extends Component {
                 "Generated X signal chart");
             let newOptionsAutoCorrelationX = signalService.correlationOptions(correlationX,
                 "Auto correlation function for X signal chart");
+            let newOptionsFourierX = signalService.fourierOptions(fourierTransformX,
+                "Discreet fourier transformation");
             let newResultsX = {
                 name: "X signal",
                 expectation: expectationX,
                 dispersion: dispersionX,
-                time: (endX - startX)
+                timeX: (endX - startX),
+                timeFx: (endFx - startFx)
             };
 
             //-------------------------------------------------------------------------
-
-            let newOptionsHarmonicY = signalService.harmonicsOptions(harmonicChartsY,
-                "Harmonics chart for X signal");
-            let newOptionsFullY = signalService.signalOptions(signalChartY,
-                "Generated Y signal chart");
-            let newOptionsAutoCorrelationY = signalService.correlationOptions(correlationY,
-                "Auto correlation function for Y signal chart");
-            let newResultsY = {
-                name: "Y signal",
-                expectation: expectationY,
-                dispersion: dispersionY,
-                time: (endY - startY)
-            };
+            /*
+                        let newOptionsHarmonicY = signalService.harmonicsOptions(harmonicChartsY,
+                            "Harmonics chart for X signal");
+                        let newOptionsFullY = signalService.signalOptions(signalChartY,
+                            "Generated Y signal chart");
+                        let newOptionsAutoCorrelationY = signalService.correlationOptions(correlationY,
+                            "Auto correlation function for Y signal chart");
+                        let newResultsY = {
+                            name: "Y signal",
+                            expectation: expectationY,
+                            dispersion: dispersionY,
+                            timeY: (endY - startY),
+                            timeFy: (endFy - startFy)
+                        };*/
 
             //-------------------------------------------------------------------------
 
-            let newOptionsMutualCorrelation = signalService.correlationOptions(
+            /*let newOptionsMutualCorrelation = signalService.correlationOptions(
                 signalService.mutualCorrelation(
                     signalChartX,
                     signalChartY,
                     expectationX,
                     expectationY),
-                "Mutual correlation of X and Y charts")
+                "Mutual correlation of X and Y charts");*/
 
             newOptionsHarmonicX.data.splice(harmonicsNum, newOptionsHarmonicX.data.length);
-            newOptionsHarmonicY.data.splice(harmonicsNum, newOptionsHarmonicY.data.length);
+            // newOptionsHarmonicY.data.splice(harmonicsNum, newOptionsHarmonicY.data.length);
 
             let newOptionsTime = JSON.parse(JSON.stringify(optionsTime));
-           /* //Uncomment this part of code if you want to rebuild chart
-            newOptionsTime = signalService.timeOptions(signalService.buildTimeChart());
-            console.log(newOptionsTime);*/
+            /* //Uncomment this part of code if you want to rebuild chart
+             newOptionsTime = signalService.timeOptions(signalService.buildTimeChart());
+             console.log(newOptionsTime);*/
 
             return {
                 optionsHarmonicsX: newOptionsHarmonicX,
                 optionsFullX: newOptionsFullX,
                 optionsAutoCorrelationX: newOptionsAutoCorrelationX,
-                optionsHarmonicsY: newOptionsHarmonicY,
-                optionsFullY: newOptionsFullY,
-                optionsAutoCorrelationY: newOptionsAutoCorrelationY,
-                optionsMutualCorrelation: newOptionsMutualCorrelation,
+                optionsFourierX: newOptionsFourierX,
+                //optionsHarmonicsY: newOptionsHarmonicY,
+                //optionsFullY: newOptionsFullY,
+                //optionsAutoCorrelationY: newOptionsAutoCorrelationY,
+                //optionsMutualCorrelation: newOptionsMutualCorrelation,
                 optionsTime: newOptionsTime,
                 resultsX: newResultsX,
-                resultsY: newResultsY
+                //resultsY: newResultsY
             };
         })
     };
+
+    /*
+    <CanvasJSChart options={this.state.optionsFullY}/>
+    <CanvasJSChart options={this.state.optionsAutoCorrelationY}/>
+    <CanvasJSChart options={this.state.optionsHarmonicsY}/>
+    <CanvasJSChart options={this.state.optionsMutualCorrelation}/>
+
+    <CanvasJSChart options={this.state.optionsTime}/>
+
+    <Result results={this.state.resultsY}/>
+    */
 
     render() {
         return (
@@ -360,16 +413,11 @@ export default class App extends Component {
                 <div className={"d-flex"}>
                     <Form onValuesPushed={this.update}/>
                     <Result results={this.state.resultsX}/>
-                    <Result results={this.state.resultsY}/>
                 </div>
                 <CanvasJSChart options={this.state.optionsFullX}/>
                 <CanvasJSChart options={this.state.optionsAutoCorrelationX}/>
                 <CanvasJSChart options={this.state.optionsHarmonicsX}/>
-                <CanvasJSChart options={this.state.optionsFullY}/>
-                <CanvasJSChart options={this.state.optionsAutoCorrelationY}/>
-                <CanvasJSChart options={this.state.optionsHarmonicsY}/>
-                <CanvasJSChart options={this.state.optionsMutualCorrelation}/>
-                <CanvasJSChart options={this.state.optionsTime}/>
+                <CanvasJSChart options={this.state.optionsFourierX}/>
             </div>
         );
     }

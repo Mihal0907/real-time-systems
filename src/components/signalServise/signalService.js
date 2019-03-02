@@ -90,6 +90,34 @@ export default class SignalService {
         }
     };
 
+    fourierTransform = (signal) => {
+        let fourierChart = [];
+        for (let i = 0; i < signal.length; i++) {
+            let real = 0;
+            let imaginary = 0;
+            for (let j = 0; j < signal.length; j++) {
+                real += signal[j] * Math.cos((2 * Math.PI * i * j) / signal.length);
+                imaginary += signal[j] * Math.sin((2 * Math.PI * i * j) / signal.length);
+            }
+            fourierChart[i] = Math.sqrt(Math.pow(real, 2) + Math.pow(imaginary, 2));
+        }
+        return fourierChart;
+    };
+
+    /*fourierTransform = (signal) => {
+        let fourierChart = [];
+        for (let i = 0; i < ((signal.length - 1)/2); i++) {
+            let real = 0;
+            let imaginary = 0;
+            for (let j = 0; j < ((signal.length - 1)/2); j++) {
+                real += signal[j] * Math.cos((2 * Math.PI * i * j) / ((signal.length - 1)/2));
+                imaginary += signal[j] * Math.sin((2 * Math.PI * i * j) / ((signal.length - 1)/2));
+            }
+            fourierChart[i] = Math.sqrt(Math.pow(real, 2) + Math.pow(imaginary, 2));
+        }
+        return fourierChart;
+    };*/
+
     signalOptions = (signalChart, text) => {
         return {
             animationEnabled: false,
@@ -113,6 +141,33 @@ export default class SignalService {
                 color: "red",
                 showInLegend: true,
                 dataPoints: this.arrToObjects(signalChart, 2)
+            }]
+        }
+    };
+
+    fourierOptions = (fourierChart, text) => {
+        return {
+            animationEnabled: false,
+            title: {
+                text: text
+            },
+            axisY: {
+                title: "Y",
+                includeZero: false
+            },
+            axisX: {
+                title: "X",
+                includeZero: false
+            },
+            toolTip: {
+                shared: true
+            },
+            data: [{
+                type: "line",
+                name: "",
+                color: "#3333CC",
+                showInLegend: true,
+                dataPoints: this.arrToObjects(fourierChart, 2)
             }]
         }
     };
