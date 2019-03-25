@@ -1,3 +1,5 @@
+import * as Complex from 'complex.js'
+
 export default class SignalService {
 
     constructor(harmonicsNum,
@@ -104,19 +106,53 @@ export default class SignalService {
         return fourierChart;
     };
 
-    /*fourierTransform = (signal) => {
-        let fourierChart = [];
-        for (let i = 0; i < ((signal.length - 1)/2); i++) {
-            let real = 0;
-            let imaginary = 0;
-            for (let j = 0; j < ((signal.length - 1)/2); j++) {
-                real += signal[j] * Math.cos((2 * Math.PI * i * j) / ((signal.length - 1)/2));
-                imaginary += signal[j] * Math.sin((2 * Math.PI * i * j) / ((signal.length - 1)/2));
-            }
-            fourierChart[i] = Math.sqrt(Math.pow(real, 2) + Math.pow(imaginary, 2));
+    fastFourierTransform = (signal) => this.fastFourierTransformComplex(signal.map(s => new Complex(s, 0))).map(x => this.myMod(x))
+
+
+    fastFourierTransformComplex = (signalComplex) => {
+
+        let N = signalComplex.length;
+
+        if (N === 1)
+            return [...signalComplex];
+
+        let even = [];
+        let odd = [];
+
+        for (let i = 0; i < N / 2; i++) {
+            even.push(signalComplex[2 * i]);
+            odd.push(signalComplex[2 * i + 1])
         }
-        return fourierChart;
-    };*/
+        let evenFFT = this.fastFourierTransformComplex(even);
+        let oddFFT = this.fastFourierTransformComplex(odd);
+        let res1 = [];
+        let res2 = [];
+
+        for (let i = 0; i < N / 2; i++) {
+            let k = -2 * i * Math.PI / 2;
+            let w = Complex(Math.cos(k), Math.sin(k));
+            res1.push(this.myAdd(evenFFT[i], this.myMul(oddFFT[i], w)));
+            res2.push(this.mySub(evenFFT[i], this.myMul(oddFFT[i], w)));
+        }
+        res2.forEach(element => {
+            res1.push(element)
+        });
+        return res1;
+
+    };
+
+    myAdd = (left, right) => {
+        return new Complex(left.re + right.re, left.im + right.im)
+    };
+    myMul = (left, right) => {
+        return new Complex(left.re * right.re - left.im * right.im, left.re * right.im + left.im * right.re)
+    };
+    mySub = (left, right) => {
+        return new Complex(left.re - right.re, left.im - right.im)
+    };
+    myMod = (compl) => {
+        return Math.sqrt(compl.re * compl.re + compl.im * compl.im)
+    };
 
     signalOptions = (signalChart, text) => {
         return {
@@ -233,11 +269,11 @@ export default class SignalService {
         return harmonicOptions;
     };
 
-    timeOptions = (timeChart) => {
+    timeOptions = (timeCharts) => {
         return {
             animationEnabled: false,
             title: {
-                text: "Dependence of time on the number of discrete samples"
+                text: "Complexity chart"
             },
             axisY: {
                 title: "Y: time",
@@ -252,10 +288,18 @@ export default class SignalService {
             },
             data: [{
                 type: "spline",
-                name: "Number of discrete samples is 2^X",
+                name: "DFT",
+                color: "green",
                 showInLegend: true,
-                dataPoints: this.arrToObjects(timeChart, 1)
-            }]
+                dataPoints: this.arrToObjects(timeCharts[0], 1)
+            },
+                {
+                    type: "spline",
+                    name: "FFT",
+                    color: "black",
+                    showInLegend: true,
+                    dataPoints: this.arrToObjects(timeCharts[1], 1)
+                }]
         }
     };
 
@@ -280,7 +324,7 @@ export default class SignalService {
 
     generateSignalTrue = (samples) => {
         let chart = [];
-        for (let i = 0; i < samples; i++) {
+        for (let i = 0; i <= samples; i++) {
             let sum = 0;
             let amplitude = Math.random();
             let phase = Math.random() * 2 * Math.PI;
@@ -289,21 +333,40 @@ export default class SignalService {
             }
             chart[i - 1] = sum;
         }
+        return chart;
     };
 
-    buildTimeChart = () => {
-        let theoreticStart = 0;
-        let theoreticEnd = 0;
-        let timeChart = [];
+    buildCharts = () => {
+        let charts = [];
         let samples = 2;
 
         for (let i = 0; i <= this.power; i++) {
-            theoreticStart = window.performance.now();
-            this.generateSignalTrue(samples);
-            theoreticEnd = window.performance.now();
-            timeChart[i] = (theoreticEnd - theoreticStart);
+            charts[i] = this.generateSignalTrue(samples);
             samples = samples * 2;
         }
-        return timeChart;
+        return charts;
     };
+
+    buildTimeFourierChart = () => {
+        let charts = this.buildCharts();
+
+        let discreteTimeChart = [];
+        let fastTimeChart = [];
+
+        let start;
+        let end;
+
+        for (let i = 0; i < charts.length; i++) {
+            start = window.performance.now();
+            this.fourierTransform(charts[i]);
+            end = window.performance.now();
+            discreteTimeChart[i] = (end - start);
+
+            start = window.performance.now();
+            this.fastFourierTransform(charts[i]);
+            end = window.performance.now();
+            fastTimeChart[i] = (end - start);
+        }
+        return [discreteTimeChart, fastTimeChart];
+    }
 }

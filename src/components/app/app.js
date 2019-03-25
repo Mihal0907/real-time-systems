@@ -210,6 +210,31 @@ export default class App extends Component {
                 ]
             }]
         },
+        optionsFFX: {
+            animationEnabled: false,
+            title: {
+                text: " "
+            },
+            axisY: {
+                title: "Y",
+                includeZero: false
+            },
+            axisX: {
+                title: "X",
+                includeZero: false
+            },
+            toolTip: {
+                shared: true
+            },
+            data: [{
+                type: "line",
+                name: "",
+                showInLegend: true,
+                dataPoints: [
+                    {y: 0, x: 0},
+                ]
+            }]
+        },
         optionsTime: {
             animationEnabled: false,
             title: {
@@ -259,12 +284,78 @@ export default class App extends Component {
                 ]
             }]
         },
+        optionsFourierTime: {
+            animationEnabled: false,
+            title: {
+                text: "Complexity chart"
+            },
+            axisY: {
+                title: "Y: time",
+                includeZero: false
+            },
+            axisX: {
+                title: "X: discrete samples",
+                includeZero: false
+            },
+            toolTip: {
+                shared: true
+            },
+            data: [{
+                type: "spline",
+                name: "DFT",
+                color: "green",
+                showInLegend: true,
+                dataPoints: [
+                    {x: 0, y: 4.005000000004657},
+                    {x: 1, y: 0.030000000027939677},
+                    {x: 2, y: 0.0650000000023283},
+                    {x: 3, y: 0.27499999999417923},
+                    {x: 4, y: 0.9049999999842839},
+                    {x: 5, y: 6.345000000001164},
+                    {x: 6, y: 6.264999999984866},
+                    {x: 7, y: 9.695000000021537},
+                    {x: 8, y: 38.760000000023865},
+                    {x: 9, y: 155.5900000000256},
+                    {x: 10, y: 626.6950000000361},
+                    {x: 11, y: 2538.634999999951},
+                    {x: 12, y: 10318.354999999996},
+                    {x: 13, y: 42489.46500000001}]
+            },
+                {
+                    type: "spline",
+                    name: "FFT",
+                    color: "black",
+                    showInLegend: true,
+                    dataPoints: [
+                        {x: 0, y: 0.14500000008956704},
+                        {x: 1, y: 0.14999999996143742},
+                        {x: 2, y: 0.3649999999870488},
+                        {x: 3, y: 0.9049999999897409},
+                        {x: 4, y: 2.290000000017244},
+                        {x: 5, y: 5.290000000059081},
+                        {x: 6, y: 13.935000000059517},
+                        {x: 7, y: 20.63999999995758},
+                        {x: 8, y: 36.500000000045475},
+                        {x: 9, y: 59.15500000003158},
+                        {x: 10, y: 130.53000000002248},
+                        {x: 11, y: 283.3500000000404},
+                        {x: 12, y: 621.5050000000701},
+                        {x: 13, y: 1323.4549999999672},
+                        {x: 14, y: 2834.71499999996},
+                        {x: 15, y: 5973.309999999969},
+                        {x: 16, y: 12780.475000000024},
+                        {x: 17, y: 27361.16000000004},
+                        {x: 18, y: 57805.384999999995}
+                    ]
+                }]
+        },
         resultsX: {
             name: "X signal",
             expectation: 0,
             dispersion: 0,
             timeX: 0,
-            timeFx: 0
+            timeFx: 0,
+            timeFfx: 0
         },
         resultsY: {
             name: "Y signal",
@@ -283,7 +374,7 @@ export default class App extends Component {
         const division = frequency / harmonicsNum;
         const discreteSamples = values.discreteNum;
         const accuracy = +1; // work only for +1 and +0.5 (I don't know why), otherwise charts are crash
-        const power = 22;
+        const power = 10;
 
         let signalService = new SignalService(
             harmonicsNum,
@@ -306,25 +397,17 @@ export default class App extends Component {
         let fourierTransformX = signalService.fourierTransform(signalChartX);
         let endFx = window.performance.now();
 
-        console.log(fourierTransformX)
+        let newSignal = signalChartX.slice(0, signalChartX.length - 1);
 
-        //-------------------------------------------------------------------------
+        let startFfx = window.performance.now();
+        let fft = signalService.fastFourierTransform(newSignal);
+        let endFfx = window.performance.now();
 
-        /*  const startY = window.performance.now();
-          let harmonicChartsY = signalService.generateHarmonics();
-          let signalChartY = signalService.generateSignal(harmonicChartsY);
-          const endY = window.performance.now();
+        console.log(fft);
 
-          const expectationY = signalService.mathExpectation(signalChartY);
-          const dispersionY = signalService.mathDispersion(signalChartY, expectationY);
+        /*let timeCharts = signalService.buildTimeFourierChart();
+        console.log(timeCharts);*/
 
-          let correlationY = signalService.autoCorrelation(signalChartY, expectationY);
-
-          let startFy = window.performance.now();
-          let fourierTransformY = signalService.fourierTransform(signalChartY);
-          let endFy = window.performance.now();
-
-          signalService.checkCorrelation(signalChartX, signalChartY);*/
 
         //-------------------------------------------------------------------------
 
@@ -338,74 +421,35 @@ export default class App extends Component {
                 "Auto correlation function for X signal chart");
             let newOptionsFourierX = signalService.fourierOptions(fourierTransformX,
                 "Discreet fourier transformation");
+            let newOptionsFFourierX = signalService.fourierOptions(fourierTransformX,
+                "Fast fourier transformation");
+            //   let newComplexityChart = signalService.timeOptions(timeCharts);
             let newResultsX = {
                 name: "X signal",
                 expectation: expectationX,
                 dispersion: dispersionX,
                 timeX: (endX - startX),
-                timeFx: (endFx - startFx)
+                timeFx: (endFx - startFx),
+                timeFfx: (endFfx - startFfx)
             };
 
             //-------------------------------------------------------------------------
-            /*
-                        let newOptionsHarmonicY = signalService.harmonicsOptions(harmonicChartsY,
-                            "Harmonics chart for X signal");
-                        let newOptionsFullY = signalService.signalOptions(signalChartY,
-                            "Generated Y signal chart");
-                        let newOptionsAutoCorrelationY = signalService.correlationOptions(correlationY,
-                            "Auto correlation function for Y signal chart");
-                        let newResultsY = {
-                            name: "Y signal",
-                            expectation: expectationY,
-                            dispersion: dispersionY,
-                            timeY: (endY - startY),
-                            timeFy: (endFy - startFy)
-                        };*/
-
-            //-------------------------------------------------------------------------
-
-            /*let newOptionsMutualCorrelation = signalService.correlationOptions(
-                signalService.mutualCorrelation(
-                    signalChartX,
-                    signalChartY,
-                    expectationX,
-                    expectationY),
-                "Mutual correlation of X and Y charts");*/
 
             newOptionsHarmonicX.data.splice(harmonicsNum, newOptionsHarmonicX.data.length);
-            // newOptionsHarmonicY.data.splice(harmonicsNum, newOptionsHarmonicY.data.length);
 
             let newOptionsTime = JSON.parse(JSON.stringify(optionsTime));
-            /* //Uncomment this part of code if you want to rebuild chart
-             newOptionsTime = signalService.timeOptions(signalService.buildTimeChart());
-             console.log(newOptionsTime);*/
-
             return {
                 optionsHarmonicsX: newOptionsHarmonicX,
                 optionsFullX: newOptionsFullX,
                 optionsAutoCorrelationX: newOptionsAutoCorrelationX,
                 optionsFourierX: newOptionsFourierX,
-                //optionsHarmonicsY: newOptionsHarmonicY,
-                //optionsFullY: newOptionsFullY,
-                //optionsAutoCorrelationY: newOptionsAutoCorrelationY,
-                //optionsMutualCorrelation: newOptionsMutualCorrelation,
+                optionsFFX: newOptionsFFourierX,
                 optionsTime: newOptionsTime,
+                // optionsFourierTime: newComplexityChart,
                 resultsX: newResultsX,
-                //resultsY: newResultsY
             };
         })
     };
-
-    /*
-    <CanvasJSChart options={this.state.optionsFullY}/>
-    <CanvasJSChart options={this.state.optionsAutoCorrelationY}/>
-    <CanvasJSChart options={this.state.optionsHarmonicsY}/>
-    <CanvasJSChart options={this.state.optionsMutualCorrelation}/>
-
-    <CanvasJSChart options={this.state.optionsTime}/>
-
-    <Result results={this.state.resultsY}/>
-    */
 
     render() {
         return (
@@ -415,9 +459,10 @@ export default class App extends Component {
                     <Result results={this.state.resultsX}/>
                 </div>
                 <CanvasJSChart options={this.state.optionsFullX}/>
-                <CanvasJSChart options={this.state.optionsAutoCorrelationX}/>
                 <CanvasJSChart options={this.state.optionsHarmonicsX}/>
                 <CanvasJSChart options={this.state.optionsFourierX}/>
+                <CanvasJSChart options={this.state.optionsFFX}/>
+                <CanvasJSChart options={this.state.optionsFourierTime}/>
             </div>
         );
     }
